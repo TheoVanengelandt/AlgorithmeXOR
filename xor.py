@@ -20,9 +20,8 @@ if f.mode == 'r':
 def xor(str1,  str2):
     if len(str1) != len(str2):
         raise "XOR EXCEPTION: Strings are not of equal length!"
-
-    s1 = bytearray(str1)
-    s2 = bytearray(str2)
+    s1 = bytearray(str1, "utf-8")
+    s2 = bytearray(str2, "utf-8")
 
     result = bytearray()
 
@@ -113,7 +112,8 @@ def has_french_words(text):
                            'trouver', 'là', 'chose', 'donner', 'plusieurs']
 
     for word in most_frequent_words:
-        if word in text:
+        if " " + word + " " in text:
+            # print("ok" + " " + word)
             return True
     return False
 
