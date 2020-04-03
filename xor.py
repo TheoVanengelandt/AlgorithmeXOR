@@ -239,7 +239,6 @@ def break_repeat_key_xor(ciphertext):
     # Higher value (0.1 - 0.15) helps find shorter keys
     hamming_blocks = int(len(ciphertext)*0.06)
     key_sizes = find_xor_keysize(ciphertext, hamming_blocks, 2)
-    print("Key sizes: ", key_sizes)
 
     for ks in key_sizes:
         print("Current key size: ", ks)
@@ -268,7 +267,9 @@ def break_repeat_key_xor(ciphertext):
 
         real_keys = []  # Stores keys with size ks. Generated from all possible combinations of one-byte keys contained in all_keys
         for key in itertools.product(*all_keys):
-            real_keys.append(''.join(key))
+            new_key = ''.join(key)
+            if new_key not in real_keys:
+                real_keys.append(new_key)
 
         print("Keys to try: ", len(real_keys))
         # Try every possible multy-byte key.
