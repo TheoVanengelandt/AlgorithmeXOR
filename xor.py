@@ -6,58 +6,33 @@ import string
 import itertools
 from unittest import result
 import binascii
-
-possible_key = list(string.ascii_lowercase)
-
-# Open the file, read each lignes and add the result into file
-# filename = input('Enter a filename: ')
-# f = open('./files/'+filename, 'r', errors='ignore')
-# if f.mode == 'r':
-#     file = f.read().lower()
-#     f.close()
-# print(file)
+from itertools import cycle
 
 
-def xor(str1,  str2):
-    if len(str1) != len(str2):
-        raise "XOR EXCEPTION: Strings are not of equal length!"
-    s1 = bytearray(str1, "utf-8")
-    s2 = bytearray(str2, "utf-8")
-
-    result = bytearray()
-
-    for i in range(len(s1)):
-        result.append(s1[i] ^ s2[i])
-
-    return str(result, encoding="ansi")
+def xore(data, key):
+    return bytes(a ^ b for a, b in zip(data, cycle(key)))
 
 
 def single_byte_xor(plaintext, key):
-    if len(key) != 1:
-        raise "KEY LENGTH EXCEPTION: In single_byte_xor key must be 1 byte long!"
+    # if len(key) != 1:
+    #     raise Exception(
+    #         "KEY LENGTH EXCEPTION: In single_byte_xor key must be 1 byte long!")
 
-    return xor(plaintext, key*len(plaintext))
+    byte_xor = xore(plaintext, key)
+    # print(byte_xor.decode('latin-1'))
+    return str(byte_xor.decode('latin-1'))
 
 
 # open french dictionary
-f = open('./ressources/liste_francais.txt', 'r')
-file = f.read().lower()
-f.close()
+file = open('./ressources/liste_francais.txt', 'r')
+doc = file.read().lower()
+file.close()
 
 digraphs = []
 for digraph in itertools.product(string.ascii_lowercase, repeat=2):
     d = ''.join(digraph)
-    if file.count(d) == 0:
+    if doc.count(d) == 0:
         digraphs.append(d)
-
-# print("Digraphs: ", digraphs)
-
-
-def has_nonprintable_characters(text):
-    for char in text:
-        if char not in string.printable:
-            return True
-    return False
 
 
 def has_vowels(text):
@@ -134,9 +109,6 @@ def has_french_words(text):
 def is_french(input_text):
     text = input_text.lower()
 
-    if has_nonprintable_characters(text):
-        return False
-
     # If the text contains one of the most frequent french words
     # it is very likely that it's an french text
     if has_french_words(text):
@@ -157,40 +129,13 @@ def is_french(input_text):
     return True
 
 
-def break_single_byte_xor(ciphertext):
-    keys = []
-    plaintext = []
-
-    for key in range(256):
-        text = single_byte_xor(ciphertext, chr(key))
-        if is_french(text):
-            keys.append(chr(key))
-            plaintext.append(text)
-
-    # There might be more than one string that match the rules of the is_french function.
-    # Return all those strings and their corresponding keys and inspect visually to
-    # determine which is the correct plaintext.
-    return keys, plaintext
-
-
-msg = 'Cela est un message secret!'
-key = '\x0f'
-ciphertext = single_byte_xor(msg, key)
-
-k, pt = break_single_byte_xor(ciphertext)
-
-# print("Keys: ", k)
-# print("Ciphertext: ", ciphertext)
-# print("Plaintexts: ", pt)
-
-
 def repeating_key_xor(plaintext, key):
     if len(key) == 0 or len(key) > len(plaintext):
         raise "KEY LENGTH EXCEPTION!"
 
     ciphertext_bytes = bytearray()
-    plaintext_bytes = bytearray(plaintext, 'utf-8')
-    key_bytes = bytearray(key, 'utf-8')
+    plaintext_bytes = bytearray(plaintext, encoding="latin-1")
+    key_bytes = bytearray(key, encoding="latin-1")
 
     # XOR every byte of the plaintext with the corresponding byte from the key
     for i in range(len(plaintext)):
@@ -198,16 +143,15 @@ def repeating_key_xor(plaintext, key):
         c = plaintext_bytes[i] ^ k
         ciphertext_bytes.append(c)
 
-    # print('ciphertext_bytes = ', str(ciphertext_bytes, encoding="ansi"))
-    return str(ciphertext_bytes, encoding="ansi")
+    # print('ciphertext_bytes = ', str(ciphertext_bytes, encoding='latin-1'))
+    return str(ciphertext_bytes, encoding='latin-1')
 
 
 def hamming_distance(str1, str2):
-    result = xor(str1, str2)
-    return bin(int(binascii.hexlify(result.encode('utf8')), 16)).count('1')
+    return bin(int(binascii.hexlify(xore(str1, str2)), 16)).count('1')
 
 
-def find_xor_keysize(ciphertext, hamming_blocks, minsize=2, maxsize=7):
+def find_xor_keysize(ciphertext, hamming_blocks, minsize=1, maxsize=7):
     hamming_dict = {}  # <keysize> : <hamming distance>
 
     if (hamming_blocks*maxsize) > len(ciphertext):
@@ -218,9 +162,6 @@ def find_xor_keysize(ciphertext, hamming_blocks, minsize=2, maxsize=7):
         # with size key_length bytes
         blocks = []
         for i in range(hamming_blocks):
-
-            # print('blocks.append', ciphertext[i*key_length: (i+1)*key_length])
-
             blocks.append(ciphertext[i*key_length: (i+1)*key_length])
 
         # Calculate the hamming distance between the blocks
@@ -242,7 +183,7 @@ def find_xor_keysize(ciphertext, hamming_blocks, minsize=2, maxsize=7):
 
     # One of the three keys that produced the lowest hamming distance
     # is likely the actual size
-    return [sorted_list_tuples[0][0], sorted_list_tuples[1][0], sorted_list_tuples[2][0]]
+    return [sorted_list_tuples[0][0]]
 
 
 def divide_text_by_blocks(text, block_size):
@@ -284,8 +225,6 @@ def has_necessary_percentage_letters(text, p=80):
 
 def is_printable_text(text):
     text = text.lower()
-    if has_nonprintable_characters(text):
-        return False
     if not has_necessary_percentage_punctuation(text):
         return False
     if not has_necessary_percentage_letters(text):
@@ -304,8 +243,7 @@ def break_repeat_key_xor(ciphertext):
 
     for ks in key_sizes:
         print("Current key size: ", ks)
-        blocks = divide_text_by_blocks(ciphertext, ks)
-
+        blocks = divide_text_by_blocks(ciphertext.decode('latin-1'), ks)
         transposed = transpose(blocks)
 
         # list of lists. One list for every block. The list has all possible one-byte keys for the block.
@@ -313,11 +251,20 @@ def break_repeat_key_xor(ciphertext):
         for block in transposed:
             block_keys = []  # store all possible one-byte keys for a single block
             for key in range(256):
-                text = single_byte_xor(block, chr(key))
+                text = single_byte_xor(
+                    bytearray(block, encoding='utf8'),
+                    bytearray(chr(key), encoding='utf8')
+                )
+
                 if is_printable_text(text):
                     block_keys.append(chr(key))
-                print(block_keys)
-                all_keys.append(block_keys)
+
+                # print(block_keys)
+                if len(all_keys) != 0:
+                    if block_keys is not all_keys[-1]:
+                        all_keys.append(block_keys)
+                else:
+                    all_keys.append(block_keys)
 
         real_keys = []  # Stores keys with size ks. Generated from all possible combinations of one-byte keys contained in all_keys
         for key in itertools.product(*all_keys):
@@ -326,26 +273,24 @@ def break_repeat_key_xor(ciphertext):
         print("Keys to try: ", len(real_keys))
         # Try every possible multy-byte key.
         for key in real_keys:
-            text = repeating_key_xor(ciphertext, key)
-            if is_french(text):
-                print("Plaintext: ", text)
-                print("Key: ", key)
-                input()
-                print("==================")
+            print("==================")
+            decrypt(ciphertext.decode('latin-1'), key)
+            print("==================")
 
 
-msg = '''On sait depuis longtemps que travailler avec du texte lisible 
-et contenant du sens est source de distractions, et empêche de se 
-concentrer sur la mise en page elle-même. L'avantage du Lorem Ipsum 
-sur un texte générique comme 'Du texte. Du texte. Du texte.' est qu'il possède 
-une distribution de lettres plus ou moins normale, et en tout cas comparable avec celle du français 
-standard. De nombreuses suites logicielles de mise en page ou éditeurs de sites Web ont fait du Lorem 
-Ipsum leur faux texte par défaut, et une recherche pour 'Lorem Ipsum' vous conduira vers de nombreux 
-sites qui n'en sont encore qu'à leur phase de construction. Plusieurs versions sont apparues avec le 
-temps, parfois par accident, souvent intentionnellement (histoire d'y rajouter de petits clins d'oeil, 
-voire des phrases embarassantes).'''
-key = "r!ck_@nd_m0rty"
+def decrypt(text, key):
+    text = repeating_key_xor(text, key)
+    if is_french(text):
+        print("Plaintext: ", text)
+        print("Key: ", key)
 
-c = repeating_key_xor(msg, key)
 
-break_repeat_key_xor(c)
+# Open the file to decrypt
+filename = input('Enter a filename: ')
+f = open('./files/'+filename, 'rb').read()
+
+break_repeat_key_xor(f)
+
+# cle = 'buoxmh'
+# cle_in_byte = bytearray(cle, encoding='utf8')
+# decrypt(f, cle_in_byte)
