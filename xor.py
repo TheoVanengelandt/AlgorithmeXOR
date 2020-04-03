@@ -198,7 +198,8 @@ def repeating_key_xor(plaintext, key):
         c = plaintext_bytes[i] ^ k
         ciphertext_bytes.append(c)
 
-    return str(ciphertext_bytes)
+    # print('ciphertext_bytes = ', str(ciphertext_bytes, encoding="ansi"))
+    return str(ciphertext_bytes, encoding="ansi")
 
 
 def hamming_distance(str1, str2):
@@ -217,6 +218,9 @@ def find_xor_keysize(ciphertext, hamming_blocks, minsize=2, maxsize=7):
         # with size key_length bytes
         blocks = []
         for i in range(hamming_blocks):
+
+            # print('blocks.append', ciphertext[i*key_length: (i+1)*key_length])
+
             blocks.append(ciphertext[i*key_length: (i+1)*key_length])
 
         # Calculate the hamming distance between the blocks
@@ -264,7 +268,7 @@ def transpose(blocks):
 
 
 def has_necessary_percentage_letters(text, p=80):
-    characters = string.letters + ' '
+    characters = string.ascii_lowercase + ' '
 
     cnt = 0
     for char in characters:
@@ -296,10 +300,10 @@ def break_repeat_key_xor(ciphertext):
     # Higher value (0.1 - 0.15) helps find shorter keys
     hamming_blocks = int(len(ciphertext)*0.06)
     key_sizes = find_xor_keysize(ciphertext, hamming_blocks, 2)
-    # print("Key sizes: ", key_sizes)
+    print("Key sizes: ", key_sizes)
 
     for ks in key_sizes:
-        # print("Current key size: ", ks)
+        print("Current key size: ", ks)
         blocks = divide_text_by_blocks(ciphertext, ks)
 
         transposed = transpose(blocks)
@@ -312,14 +316,14 @@ def break_repeat_key_xor(ciphertext):
                 text = single_byte_xor(block, chr(key))
                 if is_printable_text(text):
                     block_keys.append(chr(key))
-                # print(block_keys)
+                print(block_keys)
                 all_keys.append(block_keys)
 
         real_keys = []  # Stores keys with size ks. Generated from all possible combinations of one-byte keys contained in all_keys
         for key in itertools.product(*all_keys):
             real_keys.append(''.join(key))
 
-        # print("Keys to try: ", len(real_keys))
+        print("Keys to try: ", len(real_keys))
         # Try every possible multy-byte key.
         for key in real_keys:
             text = repeating_key_xor(ciphertext, key)
@@ -330,17 +334,16 @@ def break_repeat_key_xor(ciphertext):
                 print("==================")
 
 
-msg = '''In today's electronic communication forums, encryption can be very
-mportant!  Do you know for a fact that when you send a message to someone else,
-that someone hasn't read it along the way?  Have you ever really sent something
-you didn't want anyone reading except the person you sent it to?  As more and
-more things become online, and "paperless" communication predictions start
-coming true, it's all the more reason for encryption.  Unlike the normal U.S.
-Mail where it is a crime to tamper with your mail, email-reading can commonly
-go unnoticed on electronic pathways as your message hops from system to system
-on its route towards its final destination.  Just think, the average Internet
-letter makes at least two hops before it reaches its recipient, usually more.
-Even on public BBS's, your mail is usually stored in plaintext. '''
+msg = '''On sait depuis longtemps que travailler avec du texte lisible 
+et contenant du sens est source de distractions, et empêche de se 
+concentrer sur la mise en page elle-même. L'avantage du Lorem Ipsum 
+sur un texte générique comme 'Du texte. Du texte. Du texte.' est qu'il possède 
+une distribution de lettres plus ou moins normale, et en tout cas comparable avec celle du français 
+standard. De nombreuses suites logicielles de mise en page ou éditeurs de sites Web ont fait du Lorem 
+Ipsum leur faux texte par défaut, et une recherche pour 'Lorem Ipsum' vous conduira vers de nombreux 
+sites qui n'en sont encore qu'à leur phase de construction. Plusieurs versions sont apparues avec le 
+temps, parfois par accident, souvent intentionnellement (histoire d'y rajouter de petits clins d'oeil, 
+voire des phrases embarassantes).'''
 key = "r!ck_@nd_m0rty"
 
 c = repeating_key_xor(msg, key)
