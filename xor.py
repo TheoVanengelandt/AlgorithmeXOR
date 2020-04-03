@@ -14,24 +14,17 @@ def xore(data, key):
 
 
 def single_byte_xor(plaintext, key):
-    # if len(key) != 1:
-    #     raise Exception(
-    #         "KEY LENGTH EXCEPTION: In single_byte_xor key must be 1 byte long!")
-
-    byte_xor = xore(plaintext, key)
-    # print(byte_xor.decode('latin-1'))
-    return str(byte_xor.decode('latin-1'))
+    return str(xore(plaintext, key).decode('latin-1'))
 
 
 # open french dictionary
-file = open('./ressources/liste_francais.txt', 'r')
-doc = file.read().lower()
-file.close()
+dico = open('./ressources/liste_francais.txt', 'r').read().lower()
+dico.close()
 
 digraphs = []
 for digraph in itertools.product(string.ascii_lowercase, repeat=2):
     d = ''.join(digraph)
-    if doc.count(d) == 0:
+    if dico.count(d) == 0:
         digraphs.append(d)
 
 
@@ -74,7 +67,7 @@ def has_necessary_percentage_punctuation(text, p=10):
     for char in string.punctuation:
         cnt += text.count(char)
 
-    # Punctuation characters should be no more than 10% of the text.
+    # Ponctuation characters should be no more than 10% of the text.
     punctuation = float(cnt)*100/len(text)
     if punctuation > 10:
         return False
@@ -101,7 +94,6 @@ def has_french_words(text):
 
     for word in most_frequent_words:
         if " " + word + " " in text:
-            # print("ok" + " " + word)
             return True
     return False
 
@@ -210,11 +202,9 @@ def transpose(blocks):
 
 def has_necessary_percentage_letters(text, p=80):
     characters = string.ascii_lowercase + ' '
-
     cnt = 0
     for char in characters:
         cnt += text.count(char)
-
     percent_characters = float(cnt)*100/len(text)
 
     # The characters shoud be more than 38% of the text.
@@ -258,7 +248,6 @@ def break_repeat_key_xor(ciphertext):
                 if is_printable_text(text):
                     block_keys.append(chr(key))
 
-                # print(block_keys)
                 if len(all_keys) != 0:
                     if block_keys is not all_keys[-1]:
                         all_keys.append(block_keys)
@@ -289,7 +278,6 @@ def decrypt(text, key):
 # Open the file to decrypt
 filename = input('Enter a filename: ')
 f = open('./files/'+filename, 'rb').read()
-
 break_repeat_key_xor(f)
 
 # cle = 'buoxmh'
